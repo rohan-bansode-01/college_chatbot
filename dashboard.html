@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chat Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{margin:0;font-family:Poppins,sans-serif;background:#1f1f2e;display:flex;height:100vh;color:white}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{width:260px;background:#2b2b3d;padding:15px;display:flex;flex-direction:column;border-right:1px solid #444}
+.sidebar h3{color:#ffd700;text-align:center}
+.sidebar button{padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff6a00,#ff1e56);color:white;font-weight:600;cursor:pointer;margin-bottom:10px}
+.chat-list{flex:1;overflow-y:auto}
+.chat-item{padding:10px;border-radius:10px;background:#3a3a50;margin-bottom:8px;cursor:pointer}
+.chat-item.active{background:#ff6a00}
+
+/* ---------- CHAT ---------- */
+.chat-container{flex:1;display:flex;flex-direction:column;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center}
+header h2{color:#ffd700}
+
+.header-right{display:flex;align-items:center;gap:10px}
+.action-btn{padding:8px 16px;border:none;border-radius:25px;background:linear-gradient(135deg,#ff416c,#ff6a00);color:white;font-weight:600;cursor:pointer}
+
+/* ---------- CHAT BOX ---------- */
+.chat-box{margin-top:12px;background:#24273d;border-radius:14px;padding:12px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.chat-message{padding:10px 14px;max-width:65%;font-size:13.5px;border-radius:14px}
+.user-msg{align-self:flex-end;background:#5a7cff}
+.bot-msg{align-self:flex-start;background:#3a3f5c;color:#eaeaff}
+
+/* ---------- INPUT ---------- */
+.input-area{display:flex;gap:10px;margin-top:15px}
+#user-input{flex:1;padding:12px;border-radius:15px;border:none;background:#3a3a50;color:white}
+.send-btn{width:55px;height:55px;border-radius:50%;border:none;background:linear-gradient(135deg,#ff6a00,#ff1e56);color:white;font-size:18px;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<!-- ---------- SIDEBAR ---------- -->
+<div class="sidebar">
+  <h3>Chats</h3>
+  <button onclick="createNewChat()">+ New Chat</button>
+  <div class="chat-list" id="chatList"></div>
+</div>
+
+<!-- ---------- MAIN ---------- -->
+<div class="chat-container">
+
+<header>
+  <h2>Welcome, {{ user }}</h2>
+  <div class="header-right">
+    <button class="action-btn" onclick="saveChatPDF()">📄 Save PDF</button>
+    <button class="action-btn" onclick="deleteCurrentChat()">🗑 Delete</button>
+    <button class="action-btn" onclick="location.href='/logout'">Logout</button>
+  </div>
+</header>
+
+<div class="chat-box" id="chatBox"></div>
+
+<div class="input-area">
+  <input id="user-input" placeholder="Type or speak your message..."
+         onkeydown="if(event.key==='Enter') sendMessage()">
+  <button class="send-btn" onclick="sendMessage()">▶</button>
+  <button class="send-btn" onclick="startRecording()">🎤</button>
+</div>
+
+</div>
+
+<script>
+/* ---------- PDF ---------- */
+const { jsPDF } = window.jspdf;
+
+/* ---------- CHAT STORAGE ---------- */
+const USER_KEY="chat_history_{{ user }}";
+let chats=JSON.parse(localStorage.getItem(USER_KEY))||[];
+let activeChat=chats.length?0:-1;
+
+const chatBox=document.getElementById("chatBox");
+const chatList=document.getElementById("chatList");
+
+function save(){localStorage.setItem(USER_KEY,JSON.stringify(chats))}
+function smartTitle(t){return t.split(" ").slice(0,3).join(" ")}
+
+function appendMessage(text,cls){
+  const d=document.createElement("div");
+  d.className="chat-message "+cls;
+  d.textContent=text;
+  chatBox.appendChild(d);
+  chatBox.scrollTop=chatBox.scrollHeight;
+}
+
+function renderSidebar(){
+  chatList.innerHTML="";
+  chats.forEach((c,i)=>{
+    const d=document.createElement("div");
+    d.className="chat-item"+(i===activeChat?" active":"");
+    d.innerText=c.title;
+    d.onclick=()=>{activeChat=i;renderChat();renderSidebar()};
+    chatList.appendChild(d);
+  });
+}
+
+function renderChat(){
+  chatBox.innerHTML="";
+  if(activeChat<0)return;
+  chats[activeChat].messages.forEach(m=>{
+    appendMessage(m.q,"user-msg");
+    appendMessage(m.a,"bot-msg");
+  });
+}
+
+function createNewChat(){
+  chats.unshift({title:"New Chat",messages:[]});
+  activeChat=0;save();renderSidebar();renderChat();
+}
+
+function deleteCurrentChat(){
+  if(!confirm("Delete chat?"))return;
+  chats.splice(activeChat,1);
+  activeChat=chats.length?0:-1;
+  save();renderSidebar();renderChat();
+}
+
+/* ---------- TEXT CHAT ---------- */
+function sendMessage(){
+  const i=document.getElementById("user-input");
+  const msg=i.value.trim();
+  if(!msg)return;
+
+  if(chats[activeChat].messages.length===0)
+    chats[activeChat].title=smartTitle(msg);
+
+  appendMessage(msg,"user-msg");
+  i.value="";
+
+  fetch("/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:msg})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    appendMessage(d.reply,"bot-msg");
+    chats[activeChat].messages.push({q:msg,a:d.reply});
+    save();renderSidebar();
+  });
+}
+
+/* ---------- VOICE CHAT ---------- */
+function startRecording(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    const recorder=new MediaRecorder(stream);
+    let chunks=[];
+    recorder.start();
+
+    recorder.ondataavailable=e=>chunks.push(e.data);
+
+    recorder.onstop=()=>{
+      if(!chunks.length)return botFallback();
+      const blob=new Blob(chunks,{type:"audio/wav"});
+      const fd=new FormData();
+      fd.append("audio",blob);
+
+      fetch("/voice",{method:"POST",body:fd})
+      .then(r=>r.json())
+      .then(d=>{
+        if(!d.text)return botFallback();
+        appendMessage(d.text,"user-msg");
+        appendMessage(d.reply,"bot-msg");
+        chats[activeChat].messages.push({q:d.text,a:d.reply});
+        save();
+      })
+      .catch(botFallback);
+    };
+
+    setTimeout(()=>recorder.stop(),4000);
+  }).catch(botFallback);
+}
+
+function botFallback(){
+  appendMessage("Sorry, I could not hear you.","bot-msg");
+}
+
+/* ---------- PDF EXPORT ---------- */
+function saveChatPDF(){
+  if(activeChat<0)return alert("No chat to save");
+  const pdf=new jsPDF();
+  let y=10;
+
+  pdf.setFontSize(14);
+  pdf.text("Chat History",10,y); y+=8;
+  pdf.setFontSize(11);
+  pdf.text("User: {{ user }}",10,y); y+=8;
+  pdf.text("Chat Title: "+chats[activeChat].title,10,y); y+=10;
+
+  chats[activeChat].messages.forEach(m=>{
+    pdf.text("You: "+m.q,10,y); y+=7;
+    pdf.text("Bot: "+m.a,10,y); y+=10;
+    if(y>270){pdf.addPage();y=10;}
+  });
+
+  pdf.save(chats[activeChat].title+".pdf");
+}
+
+/* ---------- INIT ---------- */
+if(chats.length===0)createNewChat();
+else{renderSidebar();renderChat();}
+</script>
+
+</body>
+</html>

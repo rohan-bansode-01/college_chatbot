@@ -1,0 +1,32 @@
+{
+    "rohan_bansode_01": {
+        "email": "rohanbansode449@gmail.com",
+        "phone": "9156410765",
+        "password": "scrypt:32768:8:1$h1vZpvAoOXFjajIL$c3ebe984d784f40ccb9adfeee107a321a49466d41d03b1819d0bf36b1408866ca4a861fbd38ba433b37d1ff2398d16b253c38881ddb4026c345d3c0789127a00"
+    },
+    "siddharth": {
+        "email": "siddharth77@gmail.com",
+        "phone": "7769864867",
+        "password": "scrypt:32768:8:1$LUmFl45ts3x80y6f$a259d2cd4735eb74af6e3115f14201691d045eeab5953821dd20c6848090936eff2040c34f8263e40b52e448d123b48bffa4498b1b55fe88dcdd9b1faf8fa784"
+    },
+    "9156410765": {
+        "email": "siddharth77@gmail.com",
+        "phone": "7769864867",
+        "password": "scrypt:32768:8:1$ro1pb3TRhLsQn0ao$7c9e61634ba598065f99f8a898194c2684735dc215e5746df0304ba1dcd9642de4e75118d2df7802cae116226d41cea3c0d2f37ada603f4dd20b4797d109d330"
+    },
+    "rohanb": {
+        "email": "siddharth77@gmail.com",
+        "phone": "7769864867",
+        "password": "scrypt:32768:8:1$2iKVSeJAR7Rlhel0$59ee9ce75351b6432ab1a058ab39535b10e11dfc8fba3aeccc6ff2659d762115368103933d890ae852c29b967bff1df0f5f38c67addecdd95a2e59b5a94767dd"
+    },
+    "roha": {
+        "email": "siddharth77@gmail.com",
+        "phone": "7769864867",
+        "password": "scrypt:32768:8:1$g5PRDlxdBwgRVN8H$441245309c61cf756088af7aa6daffc35492b61e4e38450dc52468b1547b10b68c7ee1fa036f8221f2534b063a5266baa05c9d4aaf531e04ce3f9f91a3e179ff"
+    },
+    "u": {
+        "email": "siddharth77@gmail.com",
+        "phone": "7769864867",
+        "password": "scrypt:32768:8:1$7CcxVBgVVNJlkAPT$11344448cdda9ecfffa184934ff6300d1758615a571b9d808caebfd21cee4b9853f3e0d2181b49bc51969626548f3185b3324a77c16c13766793fa05ebe1ba5e"
+    }
+}
